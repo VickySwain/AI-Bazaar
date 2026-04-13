@@ -52,7 +52,7 @@ export default function SignupPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Input
           label="Full name"
-          placeholder="Rahul Agarwal"
+          placeholder="Vicky Swain"
           leftIcon={<User className="w-4 h-4" />}
           error={errors.fullName?.message}
           autoComplete="name"

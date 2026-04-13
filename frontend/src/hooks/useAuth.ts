@@ -25,6 +25,7 @@ export function useRegister() {
   return useMutation({
     mutationFn: async (payload: RegisterPayload) => {
       const res = await api.post('/auth/register', payload)
+      console.log('RAW RESPONSE:', JSON.stringify(res.data, null, 2))
       return extractData<AuthResult>(res)
     },
     onSuccess: (data) => {

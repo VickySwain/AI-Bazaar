@@ -54,7 +54,7 @@ async function bootstrap() {
   // ── Class Serializer (for @Exclude decorators) ───────────────────────────
   app.useGlobalInterceptors(
     new ClassSerializerInterceptor(app.get(Reflector), {
-      strategy: 'excludeAll',
+      strategy: 'exposeAll',
       excludeExtraneousValues: false,
     }),
   );

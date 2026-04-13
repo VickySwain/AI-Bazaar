@@ -91,7 +91,7 @@ export function RecommendationCard({ recommendation, index }: RecommendationCard
           <span className="text-sm text-tx-muted">/year</span>
           <div className="ml-auto flex items-center gap-1">
             <Star className="w-3.5 h-3.5 text-neon-amber fill-neon-amber" />
-            <span className="text-sm font-medium text-tx-primary">{policy.avgRating?.toFixed(1)}</span>
+            <span className="text-sm font-medium text-tx-primary">{Number(policy.avgRating).toFixed(1)}</span>
           </div>
         </div>
 

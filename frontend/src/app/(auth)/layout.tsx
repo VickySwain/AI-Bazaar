@@ -27,10 +27,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </blockquote>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-brand-gradient flex items-center justify-center text-white font-bold text-sm">
-              RA
+              VS
             </div>
             <div>
-              <p className="text-sm font-semibold text-tx-primary">Rahul Agarwal</p>
+              <p className="text-sm font-semibold text-tx-primary">Vicky Swain</p>
               <p className="text-xs text-tx-muted">CoverAI customer since 2023</p>
             </div>
           </div>

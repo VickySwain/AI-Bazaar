@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { DM_Sans, DM_Mono } from 'next/font/google'
 import '@/styles/globals.css'
 import { Providers } from './providers'
-import { Navbar } from '@/components/layout/Navbar'
-import { Footer } from '@/components/layout/Footer'
+import { ConditionalLayout } from '@/components/layout/ConditionalLayout'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -51,11 +50,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${dmSans.variable} ${dmMono.variable} bg-bg-base text-tx-primary antialiased`}>
         <Providers>
-          <Navbar />
-          <main className="min-h-screen">
+          <ConditionalLayout>
             {children}
-          </main>
-          <Footer />
+          </ConditionalLayout>
         </Providers>
       </body>
     </html>

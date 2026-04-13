@@ -270,7 +270,18 @@ export class AuthService {
   }
 
   private sanitizeUser(user: User): Partial<User> {
-    const { password, refreshToken, emailVerificationToken, passwordResetToken, ...safe } = user as any;
-    return safe;
+    return {
+    id: user.id,
+    email: user.email,
+    fullName: user.fullName,
+    phone: user.phone,
+    role: user.role,
+    authProvider: user.authProvider,
+    isEmailVerified: user.isEmailVerified,
+    isActive: user.isActive,
+    lastLoginAt: user.lastLoginAt,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
   }
 }

@@ -91,7 +91,7 @@ export default function ComparePage() {
                   <p className="text-xs text-tx-muted mb-3">{policy.insurer?.name}</p>
                   <div className="flex items-center justify-center gap-1 mb-3">
                     <Star className="w-3.5 h-3.5 text-neon-amber fill-neon-amber" />
-                    <span className="text-sm font-bold text-tx-primary">{policy.avgRating?.toFixed(1)}</span>
+                    <span className="text-sm font-bold text-tx-primary">{Number(policy.avgRating || 0).toFixed(1)}</span>
                   </div>
                   <p className="text-xl font-display font-bold text-tx-primary">
                     {formatCurrency(policy.basePremium)}
