@@ -1,0 +1,58 @@
+---
+# Backend (NestJS) configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: coverai
+data:
+  NODE_ENV: "production"
+  PORT: "3001"
+  API_PREFIX: "api/v1"
+  DB_PORT: "5432"
+  DB_NAME: "coverai_db"
+  DB_USERNAME: "coverai"
+  DB_SYNCHRONIZE: "false"
+  DB_LOGGING: "false"
+  REDIS_PORT: "6379"
+  REDIS_TTL: "300"
+  JWT_ACCESS_EXPIRY: "15m"
+  JWT_REFRESH_EXPIRY: "7d"
+  KAFKA_CLIENT_ID: "coverai-backend"
+  KAFKA_GROUP_ID: "coverai-group"
+  ML_SERVICE_URL: "http://ml-service:8000"
+  ML_SERVICE_TIMEOUT: "5000"
+  THROTTLE_TTL: "60"
+  THROTTLE_LIMIT: "100"
+  FRONTEND_URL: "https://coverai.in"
+---
+# ML Service (FastAPI) configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ml-config
+  namespace: coverai
+data:
+  DEBUG: "false"
+  LOG_LEVEL: "INFO"
+  PORT: "8000"
+  WORKERS: "4"
+  MODEL_VERSION: "v1.0.0"
+  RECOMMENDATION_CACHE_TTL: "3600"
+  FEATURE_CACHE_TTL: "1800"
+  KAFKA_GROUP_ID: "coverai-ml-group"
+  MLFLOW_EXPERIMENT_NAME: "coverai-recommendations"
+  MIN_INTERACTIONS_FOR_RETRAIN: "1000"
+  RETRAIN_SCHEDULE_HOURS: "24"
+  ALLOWED_ORIGINS: '["https://coverai.in","https://www.coverai.in"]'
+---
+# Frontend (Next.js) configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: coverai
+data:
+  NEXT_PUBLIC_API_URL: "https://api.coverai.in/api/v1"
+  NEXT_PUBLIC_APP_URL: "https://coverai.in"
+  NEXT_PUBLIC_APP_NAME: "CoverAI"

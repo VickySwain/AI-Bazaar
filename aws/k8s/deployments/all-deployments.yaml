@@ -1,0 +1,317 @@
+---
+# ── Backend Deployment (NestJS) ────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: coverai
+  labels:
+    app: backend
+    version: v1
+spec:
+  replicas: 3
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0   # Zero-downtime deploys
+  template:
+    metadata:
+      labels:
+        app: backend
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "3001"
+    spec:
+      serviceAccountName: coverai-sa
+      terminationGracePeriodSeconds: 60
+
+      # Node affinity — prefer general nodes, not ML spot nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values: [backend]
+                topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: backend
+          image: 123456789012.dkr.ecr.ap-south-1.amazonaws.com/coverai-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3001
+
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secrets
+
+          env:
+            # Dynamic values from infrastructure (set by deploy script)
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: infra-endpoints
+                  key: db_host
+            - name: REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: infra-endpoints
+                  key: redis_host
+            - name: KAFKA_BROKERS
+              valueFrom:
+                secretKeyRef:
+                  name: infra-endpoints
+                  key: kafka_brokers
+
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          livenessProbe:
+            httpGet:
+              path: /health/ping
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+            timeoutSeconds: 5
+
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 3001
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 10"]
+
+---
+# ── ML Service Deployment (FastAPI) ───────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-service
+  namespace: coverai
+  labels:
+    app: ml-service
+    version: v1
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: ml-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: ml-service
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8000"
+    spec:
+      serviceAccountName: coverai-sa
+      terminationGracePeriodSeconds: 90   # Allow in-flight inference to complete
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "ml"
+          effect: "NoSchedule"
+      nodeSelector:
+        node-type: compute
+
+      initContainers:
+        # Download trained model from S3 on startup
+        - name: model-fetcher
+          image: amazon/aws-cli:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Fetching ML model from S3..."
+              aws s3 cp s3://coverai-prod-ml-artifacts/models/xgb_recommender_v1.0.0.joblib \
+                /app/data/models/ 2>/dev/null || echo "No model in S3 — will use fallback"
+              aws s3 cp s3://coverai-prod-ml-artifacts/models/scaler_v1.0.0.joblib \
+                /app/data/models/ 2>/dev/null || true
+              aws s3 cp s3://coverai-prod-ml-artifacts/models/feature_names_v1.0.0.json \
+                /app/data/models/ 2>/dev/null || true
+              echo "Model fetch complete"
+          volumeMounts:
+            - name: ml-models
+              mountPath: /app/data/models
+          env:
+            - name: AWS_DEFAULT_REGION
+              value: ap-south-1
+
+      containers:
+        - name: ml-service
+          image: 123456789012.dkr.ecr.ap-south-1.amazonaws.com/coverai-ml:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8000
+
+          envFrom:
+            - configMapRef:
+                name: ml-config
+            - secretRef:
+                name: ml-secrets
+
+          env:
+            - name: REDIS_URL
+              value: "redis://$(REDIS_HOST):6379/1"
+            - name: KAFKA_BROKERS
+              valueFrom:
+                secretKeyRef:
+                  name: infra-endpoints
+                  key: kafka_brokers
+            - name: REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: infra-endpoints
+                  key: redis_host
+            - name: ML_ARTIFACTS_BUCKET
+              value: "coverai-prod-ml-artifacts"
+
+          volumeMounts:
+            - name: ml-models
+              mountPath: /app/data/models
+
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+
+          livenessProbe:
+            httpGet:
+              path: /health/ping
+              port: 8000
+            initialDelaySeconds: 45
+            periodSeconds: 20
+            failureThreshold: 3
+            timeoutSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 10
+
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 15"]
+
+      volumes:
+        - name: ml-models
+          emptyDir: {}
+
+---
+# ── Frontend Deployment (Next.js) ─────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: coverai
+  labels:
+    app: frontend
+    version: v1
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: frontend
+        version: v1
+    spec:
+      serviceAccountName: coverai-sa
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: frontend
+          image: 123456789012.dkr.ecr.ap-south-1.amazonaws.com/coverai-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3000
+
+          envFrom:
+            - configMapRef:
+                name: frontend-config
+
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+
+---
+# ── Service Account with IAM role (IRSA) ──────────────────────────────────
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coverai-sa
+  namespace: coverai
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::123456789012:role/coverai-prod-eks-node"

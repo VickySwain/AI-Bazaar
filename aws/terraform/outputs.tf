@@ -1,0 +1,12 @@
+output "vpc_id"               { value = module.vpc.vpc_id }
+output "eks_cluster_name"     { value = module.eks.cluster_name }
+output "eks_cluster_endpoint" { value = module.eks.cluster_endpoint }
+output "rds_endpoint"         { value = module.rds.endpoint }
+output "redis_endpoint"       { value = module.elasticache.primary_endpoint }
+output "msk_brokers"          { value = module.msk.bootstrap_brokers }
+output "ecr_frontend_url"     { value = module.ecr.frontend_url }
+output "ecr_backend_url"      { value = module.ecr.backend_url }
+output "ecr_ml_url"           { value = module.ecr.ml_url }
+output "alb_dns_name"         { value = module.alb.dns_name }
+output "ml_artifacts_bucket"  { value = aws_s3_bucket.ml_artifacts.bucket }
+output "secrets_manager_arn"  { value = aws_secretsmanager_secret.coverai_secrets.arn }

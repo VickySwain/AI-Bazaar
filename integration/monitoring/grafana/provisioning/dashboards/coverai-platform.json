@@ -1,0 +1,196 @@
+{
+  "id": null,
+  "uid": "coverai-platform",
+  "title": "CoverAI Platform Dashboard",
+  "tags": ["coverai", "platform"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Backend API — Requests/sec",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "rate(http_requests_total{job='nestjs-backend'}[1m])",
+        "legendFormat": "req/s"
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "green", "value": null },
+          { "color": "yellow", "value": 50 },
+          { "color": "red", "value": 200 }
+        ]
+      }}}
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "ML Service — Inference Latency (p99)",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job='fastapi-ml', path='/recommend'}[5m]))",
+        "legendFormat": "p99 latency"
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "green", "value": null },
+          { "color": "yellow", "value": 0.1 },
+          { "color": "red", "value": 0.5 }
+        ]
+      }}}
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "ML Model Loaded",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "ml_model_loaded{job='fastapi-ml'}",
+        "legendFormat": "model loaded"
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "mappings": [
+        { "type": "value", "options": { "0": { "text": "FALLBACK", "color": "orange" }, "1": { "text": "ML ACTIVE", "color": "green" } } }
+      ]}}
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Active Policies",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "targets": [{
+        "datasource": "PostgreSQL",
+        "rawSql": "SELECT COUNT(*) as value FROM purchases WHERE status = 'ACTIVE'",
+        "format": "table"
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" } } }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "API Request Rates by Endpoint",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(http_requests_total{job='nestjs-backend', path=~'/api/v1/recommendations.*'}[1m])",
+          "legendFormat": "{{path}}"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(http_requests_total{job='nestjs-backend', path=~'/api/v1/policies.*'}[1m])",
+          "legendFormat": "{{path}}"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(http_requests_total{job='nestjs-backend', path=~'/api/v1/auth.*'}[1m])",
+          "legendFormat": "{{path}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "ML Inference Latency Percentiles",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job='fastapi-ml'}[5m]))",
+          "legendFormat": "p50"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job='fastapi-ml'}[5m]))",
+          "legendFormat": "p95"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job='fastapi-ml'}[5m]))",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Kafka Event Throughput",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(kafka_topic_partition_current_offset{topic='recommendations.generated'}[1m])",
+          "legendFormat": "recommendations.generated"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(kafka_topic_partition_current_offset{topic='payment.captured'}[1m])",
+          "legendFormat": "payment.captured"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(kafka_topic_partition_current_offset{topic='recommendations.interaction'}[1m])",
+          "legendFormat": "recommendations.interaction"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "msg/s" } }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Redis Cache Hit Rate",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(redis_keyspace_hits_total[1m]) / (rate(redis_keyspace_hits_total[1m]) + rate(redis_keyspace_misses_total[1m]))",
+          "legendFormat": "Cache Hit Rate"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1,
+        "thresholds": { "mode": "absolute", "steps": [
+          { "color": "red", "value": null },
+          { "color": "yellow", "value": 0.5 },
+          { "color": "green", "value": 0.8 }
+        ]}
+      }}
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Recent Purchases",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [{
+        "datasource": "PostgreSQL",
+        "rawSql": "SELECT p.policy_number, pol.name as policy_name, pol.category, p.premium_paid::float, p.status, p.activated_at FROM purchases p JOIN policies pol ON pol.id = p.policy_id ORDER BY p.created_at DESC LIMIT 20",
+        "format": "table"
+      }]
+    },
+    {
+      "id": 10,
+      "type": "piechart",
+      "title": "Policy Sales by Category",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "targets": [{
+        "datasource": "PostgreSQL",
+        "rawSql": "SELECT pol.category as metric, COUNT(*) as value FROM purchases p JOIN policies pol ON pol.id = p.policy_id WHERE p.status = 'ACTIVE' GROUP BY pol.category ORDER BY value DESC",
+        "format": "table"
+      }],
+      "options": { "legend": { "placement": "right" } }
+    }
+  ]
+}

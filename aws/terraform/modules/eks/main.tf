@@ -1,0 +1,13 @@
+variable "name_prefix" {}; variable "vpc_id" {}; variable "private_subnet_ids" { type = list(string) }
+variable "cluster_version" {}; variable "node_instance_type" {}; variable "node_min_size" {}; variable "node_max_size" {}; variable "node_desired_size" {}; variable "node_role_arn" {}; variable "cluster_role_arn" {}
+resource "aws_security_group" "cluster" { name = "${var.name_prefix}-eks-sg"; vpc_id = var.vpc_id; egress { from_port = 0; to_port = 0; protocol = "-1"; cidr_blocks = ["0.0.0.0/0"] } }
+resource "aws_security_group" "nodes" { name = "${var.name_prefix}-nodes-sg"; vpc_id = var.vpc_id; ingress { from_port = 0; to_port = 0; protocol = "-1"; self = true }; ingress { from_port = 443; to_port = 443; protocol = "tcp"; security_groups = [aws_security_group.cluster.id] }; ingress { from_port = 1025; to_port = 65535; protocol = "tcp"; security_groups = [aws_security_group.cluster.id] }; egress { from_port = 0; to_port = 0; protocol = "-1"; cidr_blocks = ["0.0.0.0/0"] } }
+resource "aws_eks_cluster" "main" { name = "${var.name_prefix}-eks"; role_arn = var.cluster_role_arn; version = var.cluster_version; vpc_config { subnet_ids = var.private_subnet_ids; security_group_ids = [aws_security_group.cluster.id]; endpoint_private_access = true; endpoint_public_access = true }; enabled_cluster_log_types = ["api", "audit"] }
+resource "aws_eks_node_group" "main" { cluster_name = aws_eks_cluster.main.name; node_group_name = "${var.name_prefix}-ng"; node_role_arn = var.node_role_arn; subnet_ids = var.private_subnet_ids; instance_types = [var.node_instance_type]; capacity_type = "ON_DEMAND"; disk_size = 50; scaling_config { min_size = var.node_min_size; max_size = var.node_max_size; desired_size = var.node_desired_size }; update_config { max_unavailable = 1 } }
+resource "aws_eks_node_group" "ml" { cluster_name = aws_eks_cluster.main.name; node_group_name = "${var.name_prefix}-ng-ml"; node_role_arn = var.node_role_arn; subnet_ids = var.private_subnet_ids; instance_types = ["c5.xlarge", "c5a.xlarge"]; capacity_type = "SPOT"; disk_size = 50; scaling_config { min_size = 0; max_size = 5; desired_size = 1 }; update_config { max_unavailable = 1 }; taint { key = "dedicated"; value = "ml"; effect = "NO_SCHEDULE" } }
+data "aws_eks_cluster_auth" "main" { name = aws_eks_cluster.main.name }
+output "cluster_name"           { value = aws_eks_cluster.main.name }
+output "cluster_endpoint"       { value = aws_eks_cluster.main.endpoint }
+output "cluster_ca_certificate" { value = aws_eks_cluster.main.certificate_authority[0].data }
+output "cluster_token"          { value = data.aws_eks_cluster_auth.main.token }
+output "node_security_group_id" { value = aws_security_group.nodes.id }

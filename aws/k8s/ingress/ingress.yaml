@@ -1,0 +1,77 @@
+---
+# AWS ALB Ingress for the frontend and backend API
+# Requires: aws-load-balancer-controller installed in the cluster
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: coverai-ingress
+  namespace: coverai
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:ap-south-1:123456789012:certificate/YOUR-CERT-ID"
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    alb.ingress.kubernetes.io/healthcheck-path: /health/ping
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "30"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "10"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+    alb.ingress.kubernetes.io/load-balancer-attributes: |
+      idle_timeout.timeout_seconds=60,
+      routing.http2.enabled=true,
+      access_logs.s3.enabled=true,
+      access_logs.s3.bucket=coverai-prod-alb-logs
+    alb.ingress.kubernetes.io/wafv2-acl-arn: ""   # Add WAFv2 ACL ARN here
+    # Rate limiting via WAF rules
+    alb.ingress.kubernetes.io/tags: "Environment=prod,Project=coverai"
+spec:
+  rules:
+    # Frontend — coverai.in
+    - host: coverai.in
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: www.coverai.in
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+
+    # Backend API — api.coverai.in
+    - host: api.coverai.in
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 3001
+
+    # ML Service (internal via VPN only, not public) — ml.coverai.in
+    # Uncomment only if you need public ML access with additional auth
+    # - host: ml.coverai.in
+    #   http:
+    #     paths:
+    #       - path: /
+    #         pathType: Prefix
+    #         backend:
+    #           service:
+    #             name: ml-service
+    #             port:
+    #               number: 8000

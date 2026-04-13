@@ -1,0 +1,148 @@
+name: Infrastructure — Terraform Plan & Apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform action'
+        required: true
+        default: 'plan'
+        type: choice
+        options: [plan, apply, destroy]
+      environment:
+        description: 'Environment'
+        required: true
+        default: 'prod'
+        type: choice
+        options: [dev, staging, prod]
+
+env:
+  TF_VERSION: 1.7.0
+  AWS_REGION:  ap-south-1
+  TF_WORKING_DIR: terraform
+
+jobs:
+  terraform:
+    name: Terraform ${{ github.event.inputs.action || 'plan' }} (${{ github.event.inputs.environment || 'prod' }})
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'prod' }}
+
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/coverai-terraform-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform ${{ env.TF_VERSION }}
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=coverai-terraform-state" \
+            -backend-config="key=coverai/${{ github.event.inputs.environment || 'prod' }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=coverai-terraform-locks"
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan \
+            -var-file="environments/${{ github.event.inputs.environment || 'prod' }}/terraform.tfvars" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" \
+            -out=tfplan \
+            -no-color 2>&1 | tee plan.txt
+          echo "plan_exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Comment Plan on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('terraform/plan.txt', 'utf8').slice(0, 65000);
+            const body = `## Terraform Plan\n\`\`\`hcl\n${plan}\n\`\`\``;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+
+      - name: Terraform Apply
+        if: >
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        run: |
+          terraform apply \
+            -auto-approve \
+            tfplan
+
+      - name: Export Terraform outputs to SSM
+        if: >
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        run: |
+          ENV="${{ github.event.inputs.environment || 'prod' }}"
+
+          # Export infra endpoints to SSM so CD pipeline can inject them as K8s secrets
+          DB_ENDPOINT=$(terraform output -raw rds_endpoint)
+          DB_HOST=$(echo $DB_ENDPOINT | cut -d: -f1)
+          REDIS_HOST=$(terraform output -raw redis_endpoint | cut -d: -f1)
+          KAFKA_BROKERS=$(terraform output -raw msk_brokers)
+
+          for PARAM_NAME in db_host redis_host kafka_brokers; do
+            case $PARAM_NAME in
+              db_host)      VALUE="$DB_HOST" ;;
+              redis_host)   VALUE="$REDIS_HOST" ;;
+              kafka_brokers)VALUE="$KAFKA_BROKERS" ;;
+            esac
+            aws ssm put-parameter \
+              --name "/coverai/${ENV}/${PARAM_NAME}" \
+              --value "$VALUE" \
+              --type "SecureString" \
+              --overwrite || true
+            echo "SSM: /coverai/${ENV}/${PARAM_NAME} = ${VALUE:0:30}..."
+          done
+
+      - name: Terraform Destroy (manual only + require confirmation)
+        if: github.event.inputs.action == 'destroy'
+        run: |
+          echo "⚠ DESTROY requires manual confirmation in GitHub UI"
+          terraform destroy \
+            -var-file="environments/${{ github.event.inputs.environment || 'prod' }}/terraform.tfvars" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" \
+            -auto-approve

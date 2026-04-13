@@ -1,0 +1,91 @@
+version: '3.9'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CoverAI Monitoring Stack
+# Usage: docker-compose -f docker-compose.yml -f monitoring/docker-compose.monitoring.yml up -d
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: coverai-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: coverai-grafana
+    restart: unless-stopped
+    ports:
+      - "3100:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER:     admin
+      GF_SECURITY_ADMIN_PASSWORD: coverai_grafana
+      GF_AUTH_ANONYMOUS_ENABLED:  "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_INSTALL_PLUGINS:         grafana-clock-panel,grafana-piechart-panel
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: coverai-pg-exporter
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://coverai:coverai_secret@postgres:5432/coverai_db?sslmode=disable"
+    ports:
+      - "9187:9187"
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.58.0
+    container_name: coverai-redis-exporter
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    ports:
+      - "9121:9121"
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:latest
+    container_name: coverai-kafka-exporter
+    restart: unless-stopped
+    command:
+      - '--kafka.server=kafka:29092'
+      - '--web.listen-address=:9308'
+    ports:
+      - "9308:9308"
+    depends_on:
+      - kafka
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: coverai-node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+volumes:
+  prometheus_data:
+  grafana_data:

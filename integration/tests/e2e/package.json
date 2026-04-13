@@ -1,0 +1,28 @@
+{
+  "name": "coverai-e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-end integration tests for CoverAI full stack",
+  "scripts": {
+    "test":        "jest --runInBand --verbose",
+    "test:ci":     "jest --runInBand --verbose --forceExit",
+    "test:watch":  "jest --watch --runInBand"
+  },
+  "devDependencies": {
+    "@types/jest":   "^29.5.12",
+    "axios":         "^1.6.7",
+    "jest":          "^29.7.0",
+    "ts-jest":       "^29.1.2",
+    "typescript":    "^5.3.3"
+  },
+  "jest": {
+    "preset":               "ts-jest",
+    "testEnvironment":      "node",
+    "testTimeout":          30000,
+    "testMatch":            ["**/*.e2e.test.ts"],
+    "globalSetup":          "./setup.ts",
+    "globalTeardown":       "./teardown.ts",
+    "verbose":              true,
+    "bail":                 false,
+    "reporters":            ["default"]
+  }
+}

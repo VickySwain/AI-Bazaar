@@ -1,0 +1,110 @@
+version: '3.9'
+
+services:
+  # ── ML Service ────────────────────────────────────────────────────────────
+  ml-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: coverai-ml
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL:        postgresql://coverai:coverai_secret@postgres:5432/coverai_db
+      REDIS_URL:           redis://redis:6379/1
+      KAFKA_BROKERS:       kafka:29092
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      DEBUG:               "true"
+      LOG_LEVEL:           DEBUG
+    volumes:
+      - .:/app
+      - ml_models:/app/data/models
+      - ml_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+
+  # ── MLflow Tracking Server ────────────────────────────────────────────────
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.12.1
+    container_name: coverai-mlflow
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri sqlite:///mlflow.db
+      --default-artifact-root /mlflow/artifacts
+    volumes:
+      - mlflow_data:/mlflow
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: coverai-postgres-ml
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     coverai
+      POSTGRES_PASSWORD: coverai_secret
+      POSTGRES_DB:       coverai_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coverai -d coverai_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: coverai-redis-ml
+    restart: unless-stopped
+    ports:
+      - "6380:6379"          # Different host port to avoid clash with backend Redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ── Training Job (one-shot) ───────────────────────────────────────────────
+  train:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: coverai-trainer
+    profiles: ["train"]   # Only runs with: docker-compose --profile train up train
+    environment:
+      DATABASE_URL:        postgresql://coverai:coverai_secret@postgres:5432/coverai_db
+      REDIS_URL:           redis://redis:6379/1
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    volumes:
+      - .:/app
+      - ml_models:/app/data/models
+    depends_on:
+      - postgres
+      - redis
+    command: python scripts/train.py --evaluate
+    restart: "no"
+
+volumes:
+  ml_models:
+  ml_logs:
+  mlflow_data:
+  postgres_data:
