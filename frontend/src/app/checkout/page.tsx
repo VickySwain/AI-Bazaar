@@ -1,4 +1,5 @@
 'use client'
+import { Suspense } from 'react'
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -57,7 +58,7 @@ function loadRazorpay(): Promise<boolean> {
   })
 }
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const quoteId = searchParams.get('quoteId')
@@ -143,9 +144,7 @@ export default function CheckoutPage() {
       image:       '/logo.png',
       prefill:     orderData.prefill,
       theme:       { color: '#7c3aed' },
-      modal: {
-        ondismiss: () => {},
-      },
+      modal: { ondismiss: () => {} },
       handler: async (response: any) => {
         const result = await verifyPayment({
           razorpayOrderId:   response.razorpay_order_id,
@@ -161,7 +160,6 @@ export default function CheckoutPage() {
     rzp.open()
   }
 
-  // ── Success ──────────────────────────────────────────────────────────────
   if (step === 'success') {
     return (
       <div className="min-h-screen pt-20 pb-20 flex items-center justify-center px-4">
@@ -179,15 +177,11 @@ export default function CheckoutPage() {
           >
             <CheckCircle2 className="w-12 h-12 text-neon-green" />
           </motion.div>
-
-          <h1 className="font-display font-bold text-4xl text-tx-primary mb-3">
-            You're covered! 🎉
-          </h1>
+          <h1 className="font-display font-bold text-4xl text-tx-primary mb-3">You're covered! 🎉</h1>
           <p className="text-tx-secondary text-lg mb-8">
             Your policy is now active. A confirmation email has been sent to{' '}
             <span className="text-tx-primary font-medium">{user?.email}</span>.
           </p>
-
           <Card className="text-left mb-8">
             <div className="space-y-3">
               {quote && (
@@ -209,9 +203,8 @@ export default function CheckoutPage() {
               </div>
             </div>
           </Card>
-
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/dashboard/policies">
+            <Link href="/dashboard/my-policies">
               <Button size="lg" iconRight={<FileText className="w-4 h-4" />}>View My Policies</Button>
             </Link>
             <Link href="/policies">
@@ -226,13 +219,11 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen pt-20 pb-20 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
           <h1 className="font-display font-bold text-3xl text-tx-primary mb-1">Complete Your Purchase</h1>
           <p className="text-tx-secondary">Secure checkout — your data is encrypted end-to-end.</p>
         </motion.div>
 
-        {/* Steps indicator */}
         <div className="flex items-center gap-3 mb-8">
           {(['details', 'payment'] as Step[]).map((s, i) => (
             <div key={s} className="flex items-center gap-2">
@@ -252,7 +243,6 @@ export default function CheckoutPage() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main form */}
           <div className="lg:col-span-2">
             {step === 'details' && (
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
@@ -270,9 +260,7 @@ export default function CheckoutPage() {
                       <Input label="Phone Number" type="tel" placeholder="+91 98765 43210" leftIcon={<Phone className="w-4 h-4" />} error={errors.phone?.message} {...register('phone')} />
                       <Input label="Email Address" type="email" placeholder="you@example.com" leftIcon={<Mail className="w-4 h-4" />} error={errors.email?.message} {...register('email')} />
                     </div>
-
                     <div className="h-px bg-bd-subtle" />
-
                     <h3 className="font-semibold text-tx-primary flex items-center gap-2">
                       <Shield className="w-4 h-4 text-brand-400" />
                       Nominee Details
@@ -293,7 +281,6 @@ export default function CheckoutPage() {
                         {errors.nomineeRel && <p className="text-xs text-rose-400">{errors.nomineeRel.message}</p>}
                       </div>
                     </div>
-
                     <Button type="submit" fullWidth size="lg" loading={orderPending} iconRight={<ArrowRight className="w-4 h-4" />}>
                       Proceed to Payment
                     </Button>
@@ -310,10 +297,8 @@ export default function CheckoutPage() {
                     Secure Payment
                   </h2>
                   <p className="text-sm text-tx-secondary mb-8">
-                    You'll be redirected to Razorpay's secure checkout. Supports UPI, cards, net banking, and wallets.
+                    You'll be redirected to Razorpay's secure checkout.
                   </p>
-
-                  {/* Order summary */}
                   <div className="bg-bg-elevated border border-bd-base rounded-2xl p-5 mb-6 space-y-3">
                     <div className="flex justify-between text-sm">
                       <span className="text-tx-muted">Policy</span>
@@ -331,8 +316,6 @@ export default function CheckoutPage() {
                       </span>
                     </div>
                   </div>
-
-                  {/* Security badges */}
                   <div className="flex flex-wrap gap-3 mb-8">
                     {['256-bit SSL', 'PCI DSS Compliant', 'IRDAI Regulated', '100% Secure'].map((b) => (
                       <div key={b} className="flex items-center gap-1.5 text-xs text-tx-muted">
@@ -341,19 +324,9 @@ export default function CheckoutPage() {
                       </div>
                     ))}
                   </div>
-
-                  <Button
-                    fullWidth
-                    size="xl"
-                    glow
-                    loading={verifyPending}
-                    onClick={handlePay}
-                    icon={<CreditCard className="w-5 h-5" />}
-                    iconRight={<ArrowRight className="w-5 h-5" />}
-                  >
+                  <Button fullWidth size="xl" glow loading={verifyPending} onClick={handlePay} icon={<CreditCard className="w-5 h-5" />} iconRight={<ArrowRight className="w-5 h-5" />}>
                     Pay {formatCurrency(orderData.amount / 100)} Securely
                   </Button>
-
                   <button onClick={() => setStep('details')} className="w-full text-center text-sm text-tx-muted hover:text-tx-secondary mt-4 transition-colors">
                     ← Back to details
                   </button>
@@ -362,7 +335,6 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {/* Order summary sidebar */}
           <div className="space-y-4">
             {quotesLoading ? (
               <div className="h-64 shimmer rounded-2xl" />
@@ -378,11 +350,10 @@ export default function CheckoutPage() {
                     <p className="text-xs text-tx-muted">{quote.policy?.insurer?.name}</p>
                   </div>
                 </div>
-
                 <div className="space-y-2.5 mb-5">
                   {[
-                    { label: 'Base Premium',  value: formatCurrency(quote.annualPremium) },
-                    { label: 'GST (18%)',      value: formatCurrency(quote.gstAmount), muted: true },
+                    { label: 'Base Premium', value: formatCurrency(quote.annualPremium) },
+                    { label: 'GST (18%)', value: formatCurrency(quote.gstAmount), muted: true },
                   ].map(({ label, value, muted }) => (
                     <div key={label} className="flex justify-between text-sm">
                       <span className={muted ? 'text-tx-muted' : 'text-tx-secondary'}>{label}</span>
@@ -395,7 +366,6 @@ export default function CheckoutPage() {
                     <span className="text-lg font-display font-bold text-tx-primary">{formatCurrency(quote.totalPremium)}</span>
                   </div>
                 </div>
-
                 <Badge variant="success" dot className="w-full justify-center">
                   Quote valid until {formatDate(quote.expiresAt)}
                 </Badge>
@@ -417,5 +387,17 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-brand-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   )
 }
