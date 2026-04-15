@@ -10,7 +10,6 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   const app = await NestFactory.create(AppModule, {
-    // Enable raw body parsing for Razorpay webhook signature verification
     rawBody: true,
     bufferLogs: true,
   });
@@ -28,7 +27,12 @@ async function bootstrap() {
   // ── CORS ────────────────────────────────────────────────────────────────
   app.enableCors({
     origin: nodeEnv === 'production'
-      ? [frontendUrl, /\.coverai\.in$/]
+      ? [
+          'https://ai-bazaar-theta.vercel.app',
+          'https://ai-bazaar-git-main-vickyswains-projects.vercel.app',
+          /\.vercel\.app$/,
+          frontendUrl,
+        ]
       : ['http://localhost:3000', 'http://localhost:3001', frontendUrl],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-razorpay-signature'],
@@ -43,15 +47,15 @@ async function bootstrap() {
   // ── Global Validation Pipe ───────────────────────────────────────────────
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,             // Strip unknown properties
-      forbidNonWhitelisted: false, // Don't throw on unknown, just strip
-      transform: true,             // Auto-transform types (string → number)
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transform: true,
       transformOptions: { enableImplicitConversion: true },
-      stopAtFirstError: false,     // Collect all validation errors
+      stopAtFirstError: false,
     }),
   );
 
-  // ── Class Serializer (for @Exclude decorators) ───────────────────────────
+  // ── Class Serializer ─────────────────────────────────────────────────────
   app.useGlobalInterceptors(
     new ClassSerializerInterceptor(app.get(Reflector), {
       strategy: 'exposeAll',
@@ -63,9 +67,7 @@ async function bootstrap() {
   if (nodeEnv !== 'production') {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('CoverAI API')
-      .setDescription(
-        'Insurance Aggregation Platform API — authentication, policy comparison, recommendations, payments.',
-      )
+      .setDescription('Insurance Aggregation Platform API — authentication, policy comparison, recommendations, payments.')
       .setVersion('1.0.0')
       .addBearerAuth(
         { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' },
