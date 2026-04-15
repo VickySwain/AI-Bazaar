@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { GitCompare, CheckCircle2, XCircle, Star, TrendingUp, ArrowRight } from 'lucide-react'
@@ -22,7 +22,7 @@ function formatFieldValue(value: any, format: string): string {
   }
 }
 
-export default function ComparePage() {
+function CompareContent() {
   const searchParams = useSearchParams()
   const { policies, selectedIds } = useCompareStore()
   const { mutate: compare, data: result, isPending, reset } = useComparePolicies()
@@ -36,21 +36,17 @@ export default function ComparePage() {
   return (
     <div className="min-h-screen pt-20 pb-20 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center py-12">
           <div className="inline-flex items-center gap-2 glass border border-bd-base rounded-full px-4 py-2 mb-5">
             <GitCompare className="w-4 h-4 text-brand-400" />
             <span className="text-sm text-tx-secondary">Side-by-Side Comparison</span>
           </div>
-          <h1 className="font-display font-bold text-4xl lg:text-5xl text-tx-primary mb-3">
-            Compare Plans
-          </h1>
+          <h1 className="font-display font-bold text-4xl lg:text-5xl text-tx-primary mb-3">Compare Plans</h1>
           <p className="text-tx-secondary text-lg max-w-xl mx-auto">
             Every metric, side by side. Best values are highlighted automatically.
           </p>
         </motion.div>
 
-        {/* Empty state */}
         {!isPending && !result && (
           <div className="text-center py-20">
             <div className="w-20 h-20 rounded-3xl bg-brand-400/10 border border-brand-400/20 flex items-center justify-center mx-auto mb-6">
@@ -73,11 +69,7 @@ export default function ComparePage() {
 
         {result && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            {/* Policy Headers */}
-            <div
-              className="grid gap-4 mb-6"
-              style={{ gridTemplateColumns: `200px repeat(${result.policies.length}, 1fr)` }}
-            >
+            <div className="grid gap-4 mb-6" style={{ gridTemplateColumns: `200px repeat(${result.policies.length}, 1fr)` }}>
               <div />
               {result.policies.map((policy) => (
                 <Card key={policy.id} className="text-center" padding="sm">
@@ -98,22 +90,18 @@ export default function ComparePage() {
                     <span className="text-xs font-normal text-tx-muted">/yr</span>
                   </p>
                   <Link href={`/checkout?policyId=${policy.id}`} className="mt-3 block">
-                    <Button size="sm" fullWidth iconRight={<ArrowRight className="w-3.5 h-3.5" />}>
-                      Get Quote
-                    </Button>
+                    <Button size="sm" fullWidth iconRight={<ArrowRight className="w-3.5 h-3.5" />}>Get Quote</Button>
                   </Link>
                 </Card>
               ))}
             </div>
 
-            {/* Comparison Matrix */}
             <Card padding="none" className="overflow-hidden">
               <div className="p-5 border-b border-bd-subtle flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-brand-400" />
                 <h2 className="font-display font-semibold text-tx-primary">Detailed Comparison</h2>
                 <span className="text-xs text-tx-muted ml-1">· Best values highlighted in green</span>
               </div>
-
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <colgroup>
@@ -143,7 +131,6 @@ export default function ComparePage() {
               </div>
             </Card>
 
-            {/* Inclusions comparison */}
             <div className="mt-6 grid gap-4" style={{ gridTemplateColumns: `repeat(${result.policies.length}, 1fr)` }}>
               {result.policies.map((policy) => (
                 <Card key={policy.id} padding="sm">
@@ -188,5 +175,17 @@ export default function ComparePage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-brand-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <CompareContent />
+    </Suspense>
   )
 }
