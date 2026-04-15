@@ -65,7 +65,7 @@ export default function PoliciesPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex gap-8">
-          {/* Sidebar Filters */}
+          {/* Sidebar Filters - Desktop only */}
           <aside className="hidden lg:block w-56 flex-shrink-0">
             <FilterPanel filters={filters} onChange={handleFiltersChange} onReset={handleReset} />
           </aside>
@@ -75,7 +75,6 @@ export default function PoliciesPage() {
             {/* Toolbar */}
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
-                <FilterPanel filters={filters} onChange={handleFiltersChange} onReset={handleReset} />
                 {!isLoading && (
                   <span className="text-sm text-tx-muted">
                     {data?.pagination.total ?? 0} plans found
