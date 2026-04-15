@@ -13,7 +13,7 @@ import { getInitials } from '@/lib/utils'
 
 const navItems = [
   { label: 'Overview',        href: '/dashboard',          icon: LayoutDashboard },
-  { label: 'My Policies',     href: '/dashboard/policies', icon: FileText },
+  { label: 'My Policies',     href: '/dashboard/my-policies', icon: FileText },
   { label: 'Quotes',          href: '/dashboard/quotes',   icon: MessageSquare },
   { label: 'AI Picks',        href: '/recommend',          icon: Sparkles },
   { label: 'Compare Plans',   href: '/compare',            icon: TrendingUp },

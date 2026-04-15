@@ -114,7 +114,7 @@ export function Navbar() {
                         <div className="p-2">
                           {[
                             { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-                            { href: '/dashboard/policies', icon: FileText, label: 'My Policies' },
+                            { href: '/dashboard/my-policies', icon: FileText, label: 'My Policies' },
                             { href: '/profile', icon: User, label: 'Profile' },
                           ].map(({ href, icon: Icon, label }) => (
                             <Link
