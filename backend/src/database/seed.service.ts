@@ -24,7 +24,6 @@ export class DatabaseSeedService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
-    if (this.configService.get<string>('app.nodeEnv') === 'production') return;
     await this.seedInsurers();
     await this.seedPolicies();
     await this.seedAdminUser();
