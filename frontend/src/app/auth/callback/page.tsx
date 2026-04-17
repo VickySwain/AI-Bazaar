@@ -13,7 +13,7 @@ function CallbackHandler() {
     const refreshToken = searchParams.get('refreshToken')
 
     if (accessToken) {
-      fetch('https://ai-bazaar-production.up.railway.app/api/v1/auth/me', {
+      fetch('${process.env.NEXT_PUBLIC_API_URL || `https://ai-bazaar-production.up.railway.app/api/v1`}/auth/me', {
         headers: { Authorization: `Bearer ${accessToken}` }
       })
       .then(res => res.json())
