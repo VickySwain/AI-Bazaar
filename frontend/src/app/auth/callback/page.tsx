@@ -18,8 +18,8 @@ function CallbackHandler() {
       })
       .then(res => res.json())
       .then(data => {
-        if (data.id) {
-          setTokensAndUser(data, accessToken, refreshToken || '')
+        if (data?.data?.user?.id || data?.id) {
+          setTokensAndUser(data?.data?.user || data, accessToken, refreshToken || '')
           router.push('/dashboard')
         } else {
           router.push('/login?error=oauth_failed')
