@@ -37,11 +37,12 @@ export function Sidebar() {
     <aside className="fixed left-0 top-0 bottom-0 w-64 bg-bg-surface border-r border-bd-subtle flex flex-col z-30 hidden lg:flex">
       {/* Logo */}
       <div className="h-16 flex items-center px-6 border-b border-bd-subtle flex-shrink-0">
-        <Link href="/" className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="Market Prime Capital" className="h-8 w-auto" />
-          <span className="font-display font-semibold text-base text-tx-primary tracking-tight">
-            Market Prime Capital
-          </span>
+        <Link href="/" className="flex items-center">
+          <img 
+           src="/logo.png" 
+           alt="Market Prime Capital" 
+           className="h-10 w-auto object-contain" 
+          />
         </Link>
       </div>
 
