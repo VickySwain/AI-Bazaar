@@ -30,7 +30,7 @@ export function useRegister() {
     },
     onSuccess: (data) => {
       setTokensAndUser(data.user, data.tokens.accessToken, data.tokens.refreshToken)
-      toast.success('Welcome to Market Prime Capital! ??
+      toast.success('Welcome to Market Prime Capital!')
       router.push('/dashboard')
     },
     onError: (err: any) => {
