@@ -31,7 +31,10 @@ export class DatabaseSeedService implements OnApplicationBootstrap {
 
   private async seedInsurers() {
     const count = await this.insurerRepository.count();
-    if (count > 0) return;
+     if (count > 0) {
+      this.logger.log(`Insurers already exist: ${count}`);
+      return;  // ← ye theek hai
+    }
 
     this.logger.log('Seeding insurers...');
 
@@ -80,7 +83,11 @@ export class DatabaseSeedService implements OnApplicationBootstrap {
 
   private async seedPolicies() {
     const count = await this.policyRepository.count();
-    if (count > 0) return;
+    this.logger.log(`Policy count in DB: ${count}`);
+    if (count > 0) {
+      this.logger.log('Policies already seeded, skipping...');
+      return;
+    }
 
     this.logger.log('Seeding policies...');
 
