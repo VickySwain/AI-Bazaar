@@ -13,13 +13,15 @@ function CallbackHandler() {
     const refreshToken = searchParams.get('refreshToken')
 
     if (accessToken) {
-      fetch('${process.env.NEXT_PUBLIC_API_URL || `https://ai-bazaar-production.up.railway.app/api/v1`}/auth/me', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ai-bazaar-production.up.railway.app/api/v1'
+      fetch(`${apiUrl}/auth/me`, {
         headers: { Authorization: `Bearer ${accessToken}` }
       })
       .then(res => res.json())
       .then(data => {
-        if (data?.data?.user?.id || data?.id) {
-          setTokensAndUser(data?.data?.user || data, accessToken, refreshToken || '')
+        const user = data?.data?.user || data
+        if (user?.id) {
+          setTokensAndUser(user, accessToken, refreshToken || '')
           router.push('/dashboard')
         } else {
           router.push('/login?error=oauth_failed')
