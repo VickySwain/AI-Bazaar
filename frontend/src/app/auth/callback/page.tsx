@@ -1,9 +1,9 @@
 'use client'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
 
-export default function AuthCallback() {
+function CallbackHandler() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { setTokensAndUser } = useAuthStore()
@@ -11,9 +11,8 @@ export default function AuthCallback() {
   useEffect(() => {
     const accessToken = searchParams.get('accessToken')
     const refreshToken = searchParams.get('refreshToken')
-    
+
     if (accessToken) {
-      // Token store karo aur user info fetch karo
       fetch('https://ai-bazaar-production.up.railway.app/api/v1/auth/me', {
         headers: { Authorization: `Bearer ${accessToken}` }
       })
@@ -39,5 +38,17 @@ export default function AuthCallback() {
         <p className="text-tx-secondary">Signing you in...</p>
       </div>
     </div>
+  )
+}
+
+export default function AuthCallback() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <CallbackHandler />
+    </Suspense>
   )
 }
