@@ -47,11 +47,12 @@ export function Navbar() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
-            <img 
-             src="/logo.png" 
-             alt="Market Prime Capital" 
-             className="h-10 w-auto object-contain"
-            />
+           <div className="w-8 h-8 rounded-xl bg-brand-gradient flex items-center justify-center shadow-glow-sm">
+             <span className="text-white font-bold text-xs">MPC</span>
+           </div>
+           <span className="font-display font-semibold text-lg text-tx-primary tracking-tight">
+             Market Prime <span className="text-gradient">Capital</span>
+            </span>
           </Link>
 
           {/* Desktop Nav Links */}
