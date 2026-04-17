@@ -48,7 +48,7 @@ export function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
            <div className="w-8 h-8 rounded-xl bg-brand-gradient flex items-center justify-center shadow-glow-sm">
-             <span className="text-white font-bold text-xs">MPC</span>
+             <Shield className="w-4 h-4 text-white" />
            </div>
            <span className="font-display font-semibold text-lg text-tx-primary tracking-tight">
              Market Prime <span className="text-gradient">Capital</span>
