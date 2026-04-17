@@ -37,7 +37,7 @@ export function Footer() {
                 <Shield className="w-4.5 h-4.5 text-white" />
               </div>
               <span className="font-display font-semibold text-xl text-tx-primary">
-                Cover<span className="text-gradient">AI</span>
+                Market Prime <span className="text-gradient">Capital</span>
               </span>
             </Link>
             <p className="text-sm text-tx-secondary leading-relaxed max-w-sm mb-6">
