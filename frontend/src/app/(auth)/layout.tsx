@@ -9,10 +9,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="absolute inset-0 bg-mesh pointer-events-none" />
         <div className="absolute top-1/4 -left-20 w-80 h-80 rounded-full bg-brand-400/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-1/3 right-0 w-60 h-60 rounded-full bg-neon-blue/8 blur-3xl pointer-events-none" />
-        
+
 
         {/* Quote */}
-        <div className="relative">
+        <div className="relative h-9" />
           <blockquote className="text-3xl font-display font-semibold text-tx-primary leading-snug mb-6">
             "The best time to get insurance was yesterday. The second best time is right now."
           </blockquote>
