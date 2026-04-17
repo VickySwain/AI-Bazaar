@@ -31,7 +31,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             </div>
             <div>
               <p className="text-sm font-semibold text-tx-primary">Vicky Swain</p>
-              <p className="text-xs text-tx-muted">CoverAI customer since 2023</p>
+              <p className="text-xs text-tx-muted">MPC customer since 2023</p>
             </div>
           </div>
         </div>

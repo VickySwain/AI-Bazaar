@@ -18,13 +18,13 @@ const dmMono = DM_Mono({
 })
 
 export const metadata: Metadata = {
-  title: { default: 'CoverAI — Smarter Insurance', template: '%s | CoverAI' },
+  title: { default: 'Market Prime Capital — Smarter Insurance', template: '%s | MPC' },
   description: 'India\'s most intelligent insurance platform. Compare, analyse, and buy the right policy with AI — in minutes.',
   keywords: ['insurance', 'health insurance', 'term life', 'policy comparison', 'AI insurance'],
-  authors: [{ name: 'CoverAI' }],
+  authors: [{ name: 'Market Prime Capital' }],
   robots: { index: true, follow: true },
   openGraph: {
-    title: 'CoverAI — Smarter Insurance',
+    title: 'Market Prime Capital — Smarter Insurance',
     description: 'Compare & buy the best insurance plans with AI-powered recommendations.',
     type: 'website',
     locale: 'en_IN',

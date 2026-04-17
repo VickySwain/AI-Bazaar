@@ -139,7 +139,7 @@ function CheckoutContent() {
       amount:      orderData.amount,
       currency:    orderData.currency,
       order_id:    orderData.orderId,
-      name:        'CoverAI',
+      name:        'Market Prime Capital',
       description: `Premium — ${orderData.policy.name}`,
       image:       '/logo.png',
       prefill:     orderData.prefill,

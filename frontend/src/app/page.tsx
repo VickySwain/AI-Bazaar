@@ -213,7 +213,7 @@ export default function HomePage() {
           className="text-center mb-16"
         >
           <span className="text-xs font-semibold text-brand-400 uppercase tracking-widest mb-3 block">
-            Why CoverAI
+            Why MPC
           </span>
           <h2 className="font-display font-bold text-4xl lg:text-5xl text-tx-primary mb-4">
             Built different, from the ground up

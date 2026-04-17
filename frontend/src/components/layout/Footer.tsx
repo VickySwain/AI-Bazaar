@@ -46,10 +46,10 @@ export function Footer() {
             </p>
             <div className="flex items-center gap-3">
               {[
-                { icon: Twitter,  href: 'https://twitter.com/coverai' },
-                { icon: Github,   href: 'https://github.com/coverai' },
-                { icon: Linkedin, href: 'https://linkedin.com/company/coverai' },
-                { icon: Mail,     href: 'mailto:hello@coverai.in' },
+                { icon: Twitter,  href: 'https://twitter.com/marketprimecapital' },
+                { icon: Github,   href: 'https://github.com/VickySwain/AI-Bazaar' },
+                { icon: Linkedin, href: 'https://linkedin.com/company/marketprimecapital' },
+                { icon: Mail,     href: 'mailto:hello@marketprimecapital.in' },
               ].map(({ icon: Icon, href }) => (
                 <a
                   key={href}
@@ -89,7 +89,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="mt-12 pt-6 border-t border-bd-subtle flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-tx-muted">
-            © {new Date().getFullYear()} CoverAI Technologies Pvt. Ltd. All rights reserved.
+            © {new Date().getFullYear()} Market Prime Capital Technologies Pvt. Ltd. All rights reserved.
           </p>
           <p className="text-xs text-tx-muted">
             IRDAI Reg. No. XXX | CIN: U67200MH2024PTC000000
