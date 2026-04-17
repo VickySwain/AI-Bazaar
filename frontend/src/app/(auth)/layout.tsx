@@ -16,7 +16,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <Shield className="w-4.5 h-4.5 text-white" />
           </div>
           <Link href="/" className="font-display font-semibold text-xl text-tx-primary">
-            Cover<span className="text-gradient">AI</span>
+            Market Prime <span className="text-gradient">Capital</span>
           </Link>
         </div>
 
@@ -60,7 +60,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               <Shield className="w-4 h-4 text-white" />
             </div>
             <Link href="/" className="font-display font-semibold text-lg text-tx-primary">
-              Cover<span className="text-gradient">AI</span>
+              Market Prime <span className="text-gradient">Capital</span>
             </Link>
           </div>
           {children}
