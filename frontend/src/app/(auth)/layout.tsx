@@ -9,16 +9,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="absolute inset-0 bg-mesh pointer-events-none" />
         <div className="absolute top-1/4 -left-20 w-80 h-80 rounded-full bg-brand-400/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-1/3 right-0 w-60 h-60 rounded-full bg-neon-blue/8 blur-3xl pointer-events-none" />
-
-        {/* Logo */}
-        <div className="relative flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-brand-gradient flex items-center justify-center shadow-glow-sm">
-            <Shield className="w-4.5 h-4.5 text-white" />
-          </div>
-          <Link href="/" className="font-display font-semibold text-xl text-tx-primary">
-            Market Prime <span className="text-gradient">Capital</span>
-          </Link>
-        </div>
+        
 
         {/* Quote */}
         <div className="relative">
