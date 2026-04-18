@@ -92,8 +92,7 @@ export class PaymentsService {
       });
     } catch (err) {
       this.logger.error(`Razorpay order creation failed: ${JSON.stringify(err)}`);
-      throw new BadRequestException(`Payment gateway error: ${err?.error?.description || err?.message || 'Unknown error'}`);
-    }
+      throw new BadRequestException(`Payment gateway error: ${(err as any)?.error?.description || (err as any)?.message || 'Unknown error'}`);    }
 
     const purchase = this.purchaseRepository.create({
       userId: user.id,
