@@ -38,9 +38,12 @@ export class PaymentsService {
     private kafkaProducer: KafkaProducerService,
     private notificationsService: NotificationsService,
   ) {
+    const keyId = this.configService.get<string>('razorpay.keyId');
+    const keySecret = this.configService.get<string>('razorpay.keySecret');
+    this.logger.log(`Razorpay init: keyId=${keyId ? 'SET' : 'MISSING'}, keySecret=${keySecret ? 'SET' : 'MISSING'}`);
     this.razorpay = new Razorpay({
-      key_id: this.configService.get<string>('razorpay.keyId'),
-      key_secret: this.configService.get<string>('razorpay.keySecret'),
+      key_id: keyId,
+      key_secret: keySecret,
     });
   }
 
@@ -71,19 +74,26 @@ export class PaymentsService {
       throw new ConflictException('Payment already completed for this quote');
     }
 
-    const amountInPaise = Math.round(quote.totalPremium * 100);
+    const amountInPaise = Math.round((quote.totalPremium || 0) * 100);
+    this.logger.log(`Creating order: amount=${amountInPaise}, quoteId=${dto.quoteId}, premium=${quote.totalPremium}`);
 
-    const razorpayOrder = await this.razorpay.orders.create({
-      amount: amountInPaise,
-      currency: 'INR',
-      receipt: `receipt_${uuidv4().replace(/-/g, '').slice(0, 20)}`,
-      notes: {
-        userId: user.id,
-        quoteId: quote.id,
-        policyId: quote.policyId,
-        policyName: quote.policy?.name,
-      },
-    });
+    let razorpayOrder: any;
+    try {
+      razorpayOrder = await this.razorpay.orders.create({
+        amount: amountInPaise,
+        currency: 'INR',
+        receipt: `receipt_${uuidv4().replace(/-/g, '').slice(0, 20)}`,
+        notes: {
+          userId: user.id,
+          quoteId: quote.id,
+          policyId: quote.policyId,
+          policyName: quote.policy?.name,
+        },
+      });
+    } catch (err) {
+      this.logger.error(`Razorpay order creation failed: ${JSON.stringify(err)}`);
+      throw new BadRequestException(`Payment gateway error: ${err?.error?.description || err?.message || 'Unknown error'}`);
+    }
 
     const purchase = this.purchaseRepository.create({
       userId: user.id,
